@@ -1,4 +1,5 @@
 pub enum Token {
+    Ident(String),
     Number(i64),
     LeftParen,
     RightParen,
@@ -10,4 +11,5 @@ pub enum Token {
     And,
     Ior,
     Xor,
+    Assign,
 }

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::{self, Read, BufRead};
@@ -7,10 +8,13 @@ mod token;
 mod lex;
 mod parse;
 
-fn eval_print(string: &str) -> Result<(), i32> {
-    match lex::lex_file(string) {
+use token::Token;
+
+fn eval_print<Parse>(string: &str, mut parse: Parse) -> Result<(), i32>
+        where Parse: FnMut(&Vec<Token>) -> Result<i64, String> {
+    match lex::lex_string(string) {
         Ok(toks) => {
-            match parse::parse_tokens(&toks) {
+            match parse(&toks) {
                 Ok(value) => {
                     println!("{value}");
                     Ok(())
@@ -34,13 +38,14 @@ fn main() -> Result<(), i32> {
     
     if args.len() < 2 {
         let stdin = io::stdin();
+        let mut vars = HashMap::new();
         
         loop {
             buffer = stdin.lock().lines().next().unwrap().unwrap();
             
             match buffer.as_str() {
                 "exit" | "quit" | "q" => return Ok(()),
-                _ => _ = eval_print(&buffer)
+                _ => _ = eval_print(&buffer, |toks| parse::state::parse_tokens(&mut vars, toks))
             }
         }
     } else if args.len() == 2 && !args.get(1).unwrap().chars().nth(0).unwrap_or(' ').is_digit(10) {
@@ -53,9 +58,10 @@ fn main() -> Result<(), i32> {
                 match file.read_to_string(&mut buffer) {
                     Ok(_) => {
                         let mut ec = 0;
+                        let mut vars = HashMap::new();
                         
                         for line in buffer.lines() {
-                            match eval_print(line) {
+                            match eval_print(line, |toks| parse::state::parse_tokens(&mut vars, toks)) {
                                 Err(c) => {
                                     ec = c;
                                 },
@@ -82,6 +88,6 @@ fn main() -> Result<(), i32> {
         }
     } else {
         buffer = (&args[1..]).join(" ");
-        eval_print(&buffer)
+        eval_print(&buffer, parse::basic::parse_tokens)
     }
 }

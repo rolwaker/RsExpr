@@ -8,6 +8,8 @@ as a path to a file that should be evaluated one line at a time.
 one at a time.
 - if ran with more arguments or a single argument starting with a digit, they
 will be joined and evaluated as a single logical line.
+- when reading multiple lines from a file or from stdin it will parse in a
+stateful mode, meaning that you can assign to and use them in your expressions.
 
 ## Operator Precedence
 - 34  (...)
@@ -15,6 +17,7 @@ will be joined and evaluated as a single logical line.
 - x*y x/y x%y
 - x+y x-y
 - x&y x|y x^y
+- x=...
 
 ## Arithmetic
 - all math is performed on i64 variables (64-bit signed integers).
