@@ -24,6 +24,7 @@ fn lex_operator(buffer: &mut Peekable<Chars>) -> Result<Token, String> {
         Some('&') => Ok(Token::And),
         Some('|') => Ok(Token::Ior),
         Some('^') => Ok(Token::Xor),
+        Some('~') => Ok(Token::Invert),
         Some('=') => Ok(Token::Assign),
         _ => Err("impossible".to_string())
     }
@@ -49,7 +50,7 @@ fn lex_numeral(buffer: &mut Peekable<Chars>) -> Result<Token, String> {
 fn lex_token(buffer: &mut Peekable<Chars>) -> Result<Token, String> {
     match buffer.peek() {
         Some('a'..='z' | 'A'..='Z') => lex_identifier(buffer),
-        Some('(' | ')' | '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '=') => lex_operator(buffer),
+        Some('(' | ')' | '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '~' | '=') => lex_operator(buffer),
         Some('0'..='9') => lex_numeral(buffer),
         Some(c) => Err(format!("unknown character: '{c}'")),
         None => Err("unexpected end-of-file".to_string())

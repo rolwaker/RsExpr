@@ -31,8 +31,8 @@ pub fn parse_tokens(vars: &mut HashMap<String, i64>, toks: &Vec<Token>) -> Resul
             result
         },
         None => {
-            it = toks.iter().peekable();
-            parse_bit(&Some(vars), &mut it)
+            // use new iter since the old one may have advanced past the first token
+            parse_bit(&Some(vars), &mut toks.iter().peekable())
         }
     }
 }

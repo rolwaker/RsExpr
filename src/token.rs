@@ -11,5 +11,6 @@ pub enum Token {
     And,
     Ior,
     Xor,
+    Invert,
     Assign,
 }

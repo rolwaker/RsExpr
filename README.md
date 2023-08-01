@@ -9,7 +9,8 @@ one at a time.
 - if ran with more arguments or a single argument starting with a digit, they
 will be joined and evaluated as a single logical line.
 - when reading multiple lines from a file or from stdin it will parse in a
-stateful mode, meaning that you can assign to and use them in your expressions.
+stateful mode, meaning that you can assign to and use variables in your
+expressions.
 
 ## Operator Precedence
 - 34  (...)

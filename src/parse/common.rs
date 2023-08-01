@@ -44,6 +44,13 @@ fn parse_prefix(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<It
                 Err(msg) => Err(msg)
             }
         },
+        Some(Token::Invert) => {
+            toks.next();
+            match parse_literal(vars, toks) {
+                Ok(val) => Ok(!val),
+                Err(msg) => Err(msg)
+            }
+        },
         _ => parse_literal(vars, toks)
     }
 }
