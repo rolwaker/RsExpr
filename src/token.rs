@@ -1,6 +1,8 @@
+use crate::number::Number;
+
 pub enum Token {
     Ident(String),
-    Number(i64),
+    Number(Number),
     LeftParen,
     RightParen,
     Add,
@@ -9,8 +11,7 @@ pub enum Token {
     Divide,
     Modulo,
     And,
-    Ior,
-    Xor,
-    Invert,
+    Or,
+    Hat,
     Assign,
 }

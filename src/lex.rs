@@ -1,3 +1,4 @@
+use super::number::Number;
 use super::token::Token;
 use std::str::Chars;
 use std::iter::Peekable;
@@ -22,28 +23,27 @@ fn lex_operator(buffer: &mut Peekable<Chars>) -> Result<Token, String> {
         Some('/') => Ok(Token::Divide),
         Some('%') => Ok(Token::Modulo),
         Some('&') => Ok(Token::And),
-        Some('|') => Ok(Token::Ior),
-        Some('^') => Ok(Token::Xor),
-        Some('~') => Ok(Token::Invert),
+        Some('|') => Ok(Token::Or),
+        Some('^') => Ok(Token::Hat),
         Some('=') => Ok(Token::Assign),
         _ => Err("impossible".to_string())
     }
 }
 
 fn lex_numeral(buffer: &mut Peekable<Chars>) -> Result<Token, String> {
-    let mut num = 0i64;
+    let mut num = 0u128;
     
     loop {
         match buffer.peek() {
             Some('0'..='9') => {
                 let d = buffer.next().unwrap();
-                num = num * 10 + d.to_digit(10).unwrap() as i64;
+                num = num * 10 + d.to_digit(10).unwrap() as u128;
             },
             _ => break
         }
     }
     
-    Ok(Token::Number(num))
+    Ok(Token::Number(Number::new(false, num, 1)))
 }
 
 

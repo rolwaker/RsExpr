@@ -1,7 +1,9 @@
 # RsExpr
-simple expression evaluator written in Rust.
+
+A simple expression evaluator written in Rust.
 
 ## Usage
+
 - if ran with a single argument that doesn't start with a digit, it is taken
 as a path to a file that should be evaluated one line at a time.
 - if ran with no arguments, it will read lines from stdin and evaluate those
@@ -13,12 +15,15 @@ stateful mode, meaning that you can assign to and use variables in your
 expressions.
 
 ## Operator Precedence
+
 - 34  (...)
-- +x  -x
+- +x  -x  ^x
 - x*y x/y x%y
 - x+y x-y
 - x&y x|y x^y
 - x=...
 
 ## Arithmetic
-- all math is performed on i64 variables (64-bit signed integers).
+
+All math is performed on 128-bit integers, either as a single bitmask or as a
+fraction of two 128-bit integers.

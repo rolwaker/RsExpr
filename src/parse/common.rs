@@ -1,22 +1,23 @@
 use std::collections::HashMap;
 use std::slice::Iter;
 use std::iter::Peekable;
+use crate::number::Number;
 use crate::token::Token;
 
-fn parse_literal(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<Iter<Token>>) -> Result<i64, String> {
+fn parse_literal(vars: &Option<&mut HashMap<String, Number>>, toks: &mut Peekable<Iter<Token>>) -> Result<Number, String> {
     match toks.next() {
         Some(Token::Ident(str)) => {
             match vars {
                 Some(map) => {
                     match map.get(str.as_str()) {
-                        Some(val) => Ok(*val),
+                        Some(val) => Ok(val.clone()),
                         None => Err(format!("'{str}' has not been defined"))
                     }
                 },
                 None => Err("variables cannot be used in this mode".to_string())
             }
         },
-        Some(Token::Number(val)) => Ok(*val),
+        Some(Token::Number(val)) => Ok(val.clone()),
         Some(Token::LeftParen) => {
             let num = match parse_bit(vars, toks) {
                 Ok(val) => val,
@@ -31,7 +32,7 @@ fn parse_literal(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<I
     }
 }
 
-fn parse_prefix(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<Iter<Token>>) -> Result<i64, String> {
+fn parse_prefix(vars: &Option<&mut HashMap<String, Number>>, toks: &mut Peekable<Iter<Token>>) -> Result<Number, String> {
     match toks.peek() {
         Some(Token::Add) => {
             toks.next();
@@ -40,14 +41,21 @@ fn parse_prefix(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<It
         Some(Token::Subtract) => {
             toks.next();
             match parse_literal(vars, toks) {
-                Ok(val) => Ok(-val),
+                Ok(mut num) => {
+                    num.neg();
+                    Ok(num)
+                },
                 Err(msg) => Err(msg)
             }
         },
-        Some(Token::Invert) => {
+        Some(Token::Hat) => {
             toks.next();
             match parse_literal(vars, toks) {
-                Ok(val) => Ok(!val),
+                Ok(mut num) =>
+                    match num.not() {
+                        Ok(()) => Ok(num),
+                        Err(msg) => Err(msg),
+                    },
                 Err(msg) => Err(msg)
             }
         },
@@ -55,8 +63,8 @@ fn parse_prefix(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<It
     }
 }
 
-fn parse_product(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<Iter<Token>>) -> Result<i64, String> {
-    let mut num = match parse_prefix(vars, toks) {
+fn parse_product(vars: &Option<&mut HashMap<String, Number>>, toks: &mut Peekable<Iter<Token>>) -> Result<Number, String> {
+    let mut lhs = match parse_prefix(vars, toks) {
         Ok(val) => val,
         Err(msg) => return Err(msg)
     };
@@ -66,31 +74,39 @@ fn parse_product(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<I
             Some(Token::Multiply) => {
                 toks.next();
                 match parse_prefix(vars, toks) {
-                    Ok(val) => num *= val,
+                    Ok(rhs) => lhs.mul(&rhs),
                     Err(msg) => return Err(msg),
                 }
             },
             Some(Token::Divide) => {
                 toks.next();
                 match parse_prefix(vars, toks) {
-                    Ok(val) => num /= val,
+                    Ok(rhs) => 
+                        match lhs.div(&rhs) {
+                            Ok(()) => {},
+                            Err(msg) => return Err(msg),
+                        },
                     Err(msg) => return Err(msg),
                 }
             },
             Some(Token::Modulo) => {
                 toks.next();
                 match parse_prefix(vars, toks) {
-                    Ok(val) => num %= val,
+                    Ok(rhs) => 
+                        match lhs.rem(&rhs) {
+                            Ok(()) => {},
+                            Err(msg) => return Err(msg),
+                        },
                     Err(msg) => return Err(msg),
                 }
             },
-            _ => return Ok(num)
+            _ => return Ok(lhs)
         }
     }
 }
 
-fn parse_term(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<Iter<Token>>) -> Result<i64, String> {
-    let mut num = match parse_product(vars, toks) {
+fn parse_term(vars: &Option<&mut HashMap<String, Number>>, toks: &mut Peekable<Iter<Token>>) -> Result<Number, String> {
+    let mut lhs = match parse_product(vars, toks) {
         Ok(val) => val,
         Err(msg) => return Err(msg)
     };
@@ -100,24 +116,24 @@ fn parse_term(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<Iter
             Some(Token::Add) => {
                 toks.next();
                 match parse_product(vars, toks) {
-                    Ok(val) => num += val,
+                    Ok(rhs) => lhs.add(&rhs),
                     Err(msg) => return Err(msg),
                 }
             },
             Some(Token::Subtract) => {
                 toks.next();
                 match parse_product(vars, toks) {
-                    Ok(val) => num -= val,
+                    Ok(rhs) => lhs.sub(&rhs),
                     Err(msg) => return Err(msg),
                 }
             },
-            _ => return Ok(num)
+            _ => return Ok(lhs)
         }
     }
 }
 
-pub fn parse_bit(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<Iter<Token>>) -> Result<i64, String> {
-    let mut num = match parse_term(vars, toks) {
+pub fn parse_bit(vars: &Option<&mut HashMap<String, Number>>, toks: &mut Peekable<Iter<Token>>) -> Result<Number, String> {
+    let mut lhs = match parse_term(vars, toks) {
         Ok(val) => val,
         Err(msg) => return Err(msg)
     };
@@ -127,25 +143,37 @@ pub fn parse_bit(vars: &Option<&mut HashMap<String, i64>>, toks: &mut Peekable<I
             Some(Token::And) => {
                 toks.next();
                 match parse_term(vars, toks) {
-                    Ok(val) => num &= val,
+                    Ok(rhs) =>
+                        match lhs.and(&rhs) {
+                            Ok(()) => {},
+                            Err(msg) => return Err(msg),
+                        },
                     Err(msg) => return Err(msg),
                 }
             },
-            Some(Token::Ior) => {
+            Some(Token::Or) => {
                 toks.next();
                 match parse_term(vars, toks) {
-                    Ok(val) => num |= val,
+                    Ok(rhs) =>
+                        match lhs.ior(&rhs) {
+                            Ok(()) => {},
+                            Err(msg) => return Err(msg),
+                        },
                     Err(msg) => return Err(msg),
                 }
             },
-            Some(Token::Xor) => {
+            Some(Token::Hat) => {
                 toks.next();
                 match parse_term(vars, toks) {
-                    Ok(val) => num ^= val,
+                    Ok(rhs) =>
+                        match lhs.eor(&rhs) {
+                            Ok(()) => {},
+                            Err(msg) => return Err(msg),
+                        },
                     Err(msg) => return Err(msg),
                 }
             },
-            _ => return Ok(num)
+            _ => return Ok(lhs)
         }
     }
 }

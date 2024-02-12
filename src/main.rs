@@ -4,19 +4,22 @@ use std::fs::File;
 use std::io::{self, Read, BufRead};
 use std::path::Path;
 
-mod token;
 mod lex;
+mod number;
 mod parse;
+mod token;
 
+use number::Number;
 use token::Token;
 
 fn eval_print<Parse>(string: &str, mut parse: Parse) -> Result<(), i32>
-        where Parse: FnMut(&Vec<Token>) -> Result<i64, String> {
+        where Parse: FnMut(&Vec<Token>) -> Result<Number, String> {
     match lex::lex_string(string) {
         Ok(toks) => {
             match parse(&toks) {
-                Ok(value) => {
-                    println!("{value}");
+                Ok(n) => {
+                    let s = n.to_string();
+                    println!("{s}");
                     Ok(())
                 },
                 Err(msg) => {
